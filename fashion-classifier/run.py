@@ -48,24 +48,42 @@ def prepare(image_path):
     return x.unsqueeze(0)  # add the batch dimension -> [1, 1, 28, 28]
 
 
+# Test accuracies measured in fashion_quickstart.py and tune.py, shown on the website
+MODELS = {
+    "baseline": {"file": "model.pth", "test_accuracy": 0.646},
+    "tuned": {"file": "model_tuned.pth", "test_accuracy": 0.894},
+}
+
+
+def predict(model, x):
+    """Top-3 classes of one model for an already prepared image tensor."""
+    with torch.no_grad():
+        probs = model(x)[0].softmax(0)  # 10 scores -> 10 probabilities
+    top = probs.topk(3)
+    return {
+        "prediction": CLASSES[top.indices[0]],
+        "confidence": round(top.values[0].item(), 4),
+        "top3": {CLASSES[i]: round(p.item(), 4) for p, i in zip(top.values, top.indices)},
+    }
+
+
 class Runner(BaseRunner):
     def setup(self):
-        """Runs once when the container starts: load the trained weights."""
-        self.model = NeuralNetwork()
-        self.model.load_state_dict(torch.load("model.pth", map_location="cpu", weights_only=True))
-        self.model.eval()
+        """Runs once when the container starts: load both trained models."""
+        self.models = {}
+        for name, info in MODELS.items():
+            model = NeuralNetwork()
+            model.load_state_dict(torch.load(info["file"], map_location="cpu", weights_only=True))
+            model.eval()
+            self.models[name] = model
         open(LOG_FILE, "a").close()  # create the log file so tail -f works before the first request
 
     def run(self, image: Path = Input(description="Picture of a garment")) -> dict:
-        """Runs for every request: classify one image."""
-        with torch.no_grad():
-            probs = self.model(prepare(image))[0].softmax(0)  # 10 scores -> 10 probabilities
-        top = probs.topk(3)
-        result = {
-            "prediction": CLASSES[top.indices[0]],
-            "confidence": round(top.values[0].item(), 4),
-            "top3": {CLASSES[i]: round(p.item(), 4) for p, i in zip(top.values, top.indices)},
-        }
+        """Runs for every request: classify one image with both models."""
+        x = prepare(image)
+        result = {}
+        for name, model in self.models.items():
+            result[name] = {**predict(model, x), "test_accuracy": MODELS[name]["test_accuracy"]}
 
         line = f"{datetime.now():%H:%M:%S} prediction: {json.dumps(result)}"
         print(line, flush=True)

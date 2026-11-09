@@ -39,6 +39,7 @@
     </label>
     <input id="file" type="file" accept="image/*">
     <button id="classify" disabled>Classify</button>
+    <button id="reset" type="button" style="background:#e8e2dc; color:#2b2622">Reset</button>
     <div id="result"></div>
   </div>
 </main>
@@ -80,16 +81,51 @@ button.addEventListener("click", async () => {
   }
 });
 
-function render(data) {
-  const rows = Object.entries(data.top3).sort((a, b) => b[1] - a[1]).map(([name, p]) => `
+function column(title, m) {
+  const rows = Object.entries(m.top3).sort((a, b) => b[1] - a[1]).map(([name, p]) => `
     <div class="row">
       <div class="label"><span>${name}</span><span>${pct(p)}</span></div>
       <div class="track"><div class="fill" style="width:${p * 100}%"></div></div>
     </div>`).join("");
-  result.innerHTML = `<div class="verdict">Looks like: ${data.prediction}</div>
+  return `<div>
+    <div class="note">${title} · test accuracy ${pct(m.test_accuracy)}</div>
+    <div class="verdict">${m.prediction}</div>
     ${rows}
-    <p class="note">Top 3 of the 10 FashionMNIST classes. The model was trained on 28×28 grayscale images, so real photos may be misclassified.</p>`;
+  </div>`;
 }
+
+function column(title, m) {
+  const rows = Object.entries(m.top3).sort((a, b) => b[1] - a[1]).map(([name, p]) => `
+    <div class="row">
+      <div class="label"><span>${name}</span><span>${pct(p)}</span></div>
+      <div class="track"><div class="fill" style="width:${p * 100}%"></div></div>
+    </div>`).join("");
+  return `<div>
+    <div class="note">${title} · test accuracy ${pct(m.test_accuracy)}</div>
+    <div class="verdict">${m.prediction}</div>
+    ${rows}
+  </div>`;
+}
+
+function render(data) {
+  result.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+      ${column("Baseline model", data.baseline)}
+      ${column("Tuned model", data.tuned)}
+    </div>
+    <p class="note">Same network, same data. Only the hyperparameters differ:
+      baseline lr=0.001, batch 64, 5 epochs; tuned lr=0.1, batch 32, 15 epochs.</p>`;
+}
+
+// Reset: clear the chosen picture and the results, ready for the next one
+document.getElementById("reset").addEventListener("click", () => {
+  fileInput.value = "";
+  preview.style.display = "none";
+  preview.removeAttribute("src");
+  hint.textContent = "Click to choose a garment picture";
+  result.innerHTML = "";
+  button.disabled = true;
+});
 
 </script>
 </body>
