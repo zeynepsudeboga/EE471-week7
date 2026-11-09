@@ -2,15 +2,15 @@
 # First build the model image once with:  cog build -t fashion-classifier
 services:
   model:
-    image: fashion-classifier       # image produced by "cog build"
-    container_name: fashion-model
+    image: cifar-classifier       # image produced by "cog build"
+    container_name: cifar-model
     ports:
       - "5050:5000"                 # Cog serves on 5000; Mac uses 5050 (macOS AirPlay already uses 5000)
 
   web:
     build: ./web
-    image: fashion-web
-    container_name: fashion-web
+    image: cifar-web
+    container_name: cifar-web
     ports:
       - "8000:8000"
     environment:

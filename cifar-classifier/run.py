@@ -49,8 +49,8 @@ def prepare(image_path):
 
 # Test accuracies from cifar10_tutorial.py and tune_cifar.py, shown on the website
 MODELS = {
-    "baseline": {"file": "cifar_net.pt", "test_accuracy": 0.0},
-    "tuned": {"file": "cifar_net_tuned.pt", "test_accuracy": 0.0},
+        "baseline": {"file": "cifar_net.pt", "test_accuracy": 0.537},
+    "tuned": {"file": "cifar_net_tuned.pt", "test_accuracy": 0.601},
 }
 
 

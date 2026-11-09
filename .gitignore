@@ -2,3 +2,7 @@
 data/
 __pycache__/
 .DS_Store
+
+# Cog build files and my own test photos from the internet
+.cog/
+cifar_samples_net/

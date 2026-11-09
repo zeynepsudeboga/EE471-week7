@@ -1,0 +1,56 @@
+{
+  "search": [
+    {
+      "lr": 0.01,
+      "batch_size": 32,
+      "val_accuracy": 0.536
+    },
+    {
+      "lr": 0.05,
+      "batch_size": 128,
+      "val_accuracy": 0.518
+    },
+    {
+      "lr": 0.001,
+      "batch_size": 4,
+      "val_accuracy": 0.5172
+    },
+    {
+      "lr": 0.01,
+      "batch_size": 128,
+      "val_accuracy": 0.4498
+    },
+    {
+      "lr": 0.001,
+      "batch_size": 32,
+      "val_accuracy": 0.3524
+    },
+    {
+      "lr": 0.05,
+      "batch_size": 32,
+      "val_accuracy": 0.3356
+    },
+    {
+      "lr": 0.01,
+      "batch_size": 4,
+      "val_accuracy": 0.2598
+    },
+    {
+      "lr": 0.001,
+      "batch_size": 128,
+      "val_accuracy": 0.1186
+    },
+    {
+      "lr": 0.05,
+      "batch_size": 4,
+      "val_accuracy": 0.1064
+    }
+  ],
+  "best": {
+    "lr": 0.01,
+    "batch_size": 32,
+    "epochs": 10
+  },
+  "baseline_test_accuracy": 0.537,
+  "tuned_test_accuracy": 0.6005
+}
