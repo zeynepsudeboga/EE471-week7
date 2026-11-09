@@ -1,0 +1,19 @@
+# Garment classifier: Cog model container + website container
+# First build the model image once with:  cog build -t fashion-classifier
+services:
+  model:
+    image: fashion-classifier       # image produced by "cog build"
+    container_name: fashion-model
+    ports:
+      - "5050:5000"                 # Cog serves on 5000; Mac uses 5050 (macOS AirPlay already uses 5000)
+
+  web:
+    build: ./web
+    image: fashion-web
+    container_name: fashion-web
+    ports:
+      - "8000:8000"
+    environment:
+      COG_URL: http://model:5000    # containers reach each other by service name
+    depends_on:
+      - model

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garment Classifier</title>
+<style>
+  :root { --bg:#f6f3ee; --card:#fff; --ink:#2b2622; --muted:#7a716a; --accent:#c8642c; --bar:#f0e2d6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+  main { max-width:560px; margin:48px auto; padding:0 16px; }
+  h1 { margin:0 0 4px; font-size:28px; }
+  p.sub { margin:0 0 24px; color:var(--muted); }
+  .card { background:var(--card); border-radius:14px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+  .drop { display:block; border:2px dashed #d9cfc6; border-radius:12px; padding:24px; text-align:center; cursor:pointer; color:var(--muted); }
+  .drop:hover { border-color:var(--accent); }
+  #preview { display:none; max-width:100%; max-height:320px; margin:0 auto 4px; border-radius:10px; }
+  input[type=file] { display:none; }
+  button { margin-top:16px; width:100%; padding:12px; font-size:16px; border:0; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  #result { margin-top:20px; }
+  .verdict { font-size:20px; font-weight:600; margin-bottom:12px; }
+  .row { margin:8px 0; }
+  .row .label { display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px; }
+  .track { height:10px; background:var(--bar); border-radius:6px; overflow:hidden; }
+  .fill { height:100%; background:var(--accent); }
+  .note { font-size:13px; color:var(--muted); margin-top:12px; }
+  .error { color:#b3261e; }
+</style>
+</head>
+<body>
+<main>
+  <h1>👕 Garment Classifier</h1>
+  <p class="sub">Upload a picture of a garment and the model I trained on FashionMNIST will classify it (running in a Cog container).</p>
+  <div class="card">
+    <label class="drop" for="file">
+      <img id="preview" alt="Selected image">
+      <span id="hint">Click to choose a garment photo</span>
+    </label>
+    <input id="file" type="file" accept="image/*">
+    <button id="classify" disabled>Classify</button>
+    <button id="reset" type="button" style="background:#e8e2dc; color:#2b2622">Reset</button>
+    <div id="result"></div>
+  </div>
+</main>
+<script>
+const fileInput = document.getElementById("file");
+const preview = document.getElementById("preview");
+const hint = document.getElementById("hint");
+const button = document.getElementById("classify");
+const result = document.getElementById("result");
+
+const pct = p => (p * 100).toFixed(1) + "%";
+
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  result.innerHTML = "";
+  if (!file) { button.disabled = true; return; }
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = "block";
+  hint.textContent = file.name;
+  button.disabled = false;
+});
+
+button.addEventListener("click", async () => {
+  const form = new FormData();
+  form.append("image", fileInput.files[0]);
+  button.disabled = true;
+  button.textContent = "Classifying…";
+  result.innerHTML = "";
+  try {
+    const res = await fetch("/api/classify", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+    render(data);
+  } catch (err) {
+    result.innerHTML = `<p class="error">${err.message}</p>`;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Classify";
+  }
+});
+
+function column(title, m) {
+  const rows = Object.entries(m.top3).sort((a, b) => b[1] - a[1]).map(([name, p]) => `
+    <div class="row">
+      <div class="label"><span>${name}</span><span>${pct(p)}</span></div>
+      <div class="track"><div class="fill" style="width:${p * 100}%"></div></div>
+    </div>`).join("");
+  return `<div>
+    <div class="note">${title} · test accuracy ${pct(m.test_accuracy)}</div>
+    <div class="verdict">${m.prediction}</div>
+    ${rows}
+  </div>`;
+}
+
+function column(title, m) {
+  const rows = Object.entries(m.top3).sort((a, b) => b[1] - a[1]).map(([name, p]) => `
+    <div class="row">
+      <div class="label"><span>${name}</span><span>${pct(p)}</span></div>
+      <div class="track"><div class="fill" style="width:${p * 100}%"></div></div>
+    </div>`).join("");
+  return `<div>
+    <div class="note">${title} · test accuracy ${pct(m.test_accuracy)}</div>
+    <div class="verdict">${m.prediction}</div>
+    ${rows}
+  </div>`;
+}
+
+function render(data) {
+  result.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+      ${column("Baseline model", data.baseline)}
+      ${column("Tuned model", data.tuned)}
+    </div>
+    <p class="note">Same network, same data. Only the hyperparameters differ:
+      baseline lr=0.001, batch 64, 5 epochs; tuned lr=0.1, batch 32, 15 epochs.</p>`;
+}
+
+// Reset: clear the chosen picture and the results, ready for the next one
+document.getElementById("reset").addEventListener("click", () => {
+  fileInput.value = "";
+  preview.style.display = "none";
+  preview.removeAttribute("src");
+  hint.textContent = "Click to choose a garment picture";
+  result.innerHTML = "";
+  button.disabled = true;
+});
+
+</script>
+</body>
+</html>
